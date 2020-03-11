@@ -1,42 +1,56 @@
 /* eslint-disable react/state-in-constructor */
-import React, { Component } from 'react';
-import { MdShoppingCart } from 'react-icons/md';
-import {formatPrice} from '../../util/format';
-import api from '../../services/api';
-import { ProductList } from './styles';
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import { MdShoppingCart } from "react-icons/md";
+import { formatPrice } from "../../util/format";
+import api from "../../services/api";
+import { ProductList } from "./styles";
 
-export default class Home extends Component {
-    state = {
-        products: [],
-    };
+class Home extends Component {
+  state = {
+    products: [],
+  };
 
-    async componentDidMount() {
-        const response = await api.get('products');
-        const data = response.data.map(product => ({
-            ...product,
-            priceFormatted: formatPrice(product.price),
-        }))
-        this.setState({ products: data });
-    }
+  async componentDidMount() {
+    const response = await api.get("products");
+    const data = response.data.map(product => ({
+      ...product,
+      priceFormatted: formatPrice(product.price),
+    }));
+    this.setState({ products: data });
+  }
 
-    render() {
-        const { products } = this.state;
-        return (
-            <ProductList>
-                {products.map(produto => (
-                    <li>
-                        <img src={produto.image} alt={produto.title} />
-                        <strong>{produto.title}</strong>
-                        <span>{produto.priceFormatted}</span>
-                        <button type="button">
-                            <div>
-                                <MdShoppingCart size={16} color="#FFF" />
-                            </div>
-                            <span>ADICIONAR AO CARRINHO</span>
-                        </button>
-                    </li>
-                ))}
-            </ProductList>
-        );
-    }
+  handleAddShoesToCart = product => {
+    const { dispatch } = this.props;
+    dispatch({
+      type: "ADD_TO_CART",
+      product,
+    });
+  };
+
+  render() {
+    const { products } = this.state;
+    return (
+      <ProductList>
+        {products.map(product => (
+          <li>
+            <img src={product.image} alt={product.title} />
+            <strong>{product.title}</strong>
+            <span>{product.priceFormatted}</span>
+            <button
+              type="button"
+              onClick={() => this.handleAddShoesToCart(product)}
+            >
+              <div>
+                <MdShoppingCart size={16} color="#FFF" />
+              </div>
+              <span>ADICIONAR AO CARRINHO</span>
+            </button>
+          </li>
+        ))}
+      </ProductList>
+    );
+  }
 }
+
+export default connect()(Home);
