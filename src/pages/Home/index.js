@@ -1,66 +1,57 @@
-/* eslint-disable react/state-in-constructor */
-import React, { Component } from "react";
-import { connect } from "react-redux";
-import { bindActionCreators } from "redux";
+import React, { useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { MdShoppingCart } from "react-icons/md";
 import { formatPrice } from "../../util/format";
 import api from "../../services/api";
 import { ProductList } from "./styles";
 import * as cartActions from "../../store/modules/cart/actions";
 
-class Home extends Component {
-  state = {
-    products: [],
-  };
+export default function Home() {
+  const [products, setProduct] = useState([]);
+  const dispatch = useDispatch();
 
-  async componentDidMount() {
-    const response = await api.get("products");
-    const data = response.data.map(product => ({
-      ...product,
-      priceFormatted: formatPrice(product.price),
-    }));
-    this.setState({ products: data });
+  const amountHome = useSelector(state =>
+    state.cart.reduce((amount, product) => {
+      amount[product.id] = product.amount;
+      return amount;
+    }, {})
+  );
+
+  useEffect(() => {
+    async function loadProducts() {
+      const response = await api.get("products");
+      const data = response.data.map(product => ({
+        ...product,
+        priceFormatted: formatPrice(product.price),
+      }));
+      setProduct(data);
+    }
+    loadProducts();
+  }, []);
+
+  function handleAddShoesToCart(id) {
+    dispatch(cartActions.addToCartRequest(id));
   }
 
-  handleAddShoesToCart = id => {
-    const { addToCartRequest } = this.props;
-    addToCartRequest(id);
-  };
-
-  render() {
-    const { products } = this.state;
-    const { amountHome } = this.props;
-    return (
-      <ProductList>
-        {products.map(product => (
-          <li>
-            <img src={product.image} alt={product.title} />
-            <strong>{product.title}</strong>
-            <span>{product.priceFormatted}</span>
-            <button
-              type="button"
-              onClick={() => this.handleAddShoesToCart(product.id)}
-            >
-              <div>
-                <MdShoppingCart size={16} color="#FFF" />
-                {amountHome[product.id] || 0}
-              </div>
-              <span>ADICIONAR AO CARRINHO</span>
-            </button>
-          </li>
-        ))}
-      </ProductList>
-    );
-  }
+  return (
+    <ProductList>
+      {products.map(product => (
+        <li>
+          <img src={product.image} alt={product.title} />
+          <strong>{product.title}</strong>
+          <span>{product.priceFormatted}</span>
+          <button
+            type="button"
+            onClick={() => handleAddShoesToCart(product.id)}
+          >
+            <div>
+              <MdShoppingCart size={16} color="#FFF" />
+              {amountHome[product.id] || 0}
+            </div>
+            <span>ADICIONAR AO CARRINHO</span>
+          </button>
+        </li>
+      ))}
+    </ProductList>
+  );
 }
-const mapStateToProps = state => ({
-  amountHome: state.cart.reduce((amountHome, product) => {
-    amountHome[product.id] = product.amount;
-    return amountHome;
-  }, {}),
-});
-
-const mapDispatchToProps = dispatch =>
-  bindActionCreators(cartActions, dispatch);
-
-export default connect(mapStateToProps, mapDispatchToProps)(Home);
